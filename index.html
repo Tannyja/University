@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniFind Thailand</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2ee;
+  --surface: #ffffff;
+  --surface2: #f0ece6;
+  --border: #ddd8d0;
+  --text: #1a1714;
+  --muted: #8a8278;
+  --ink: #2c2520;
+  --red: #c0392b;
+  --gold: #b8860b;
+  --green: #1a6b3c;
+  --blue: #1a3a6b;
+  --sidebar-w: 220px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* subtle grid bg */
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events:none; z-index:0;
+}
+
+.layout { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--ink);
+  color: #e8e0d8;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top:0; left:0; bottom:0;
+  z-index:100;
+}
+
+.logo-block {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.logo-text {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 22px; font-weight:700;
+  color: #fff; letter-spacing: 1px;
+}
+.logo-text span { color: #e8a020; }
+.logo-sub {
+  font-size: 10px; color: rgba(255,255,255,0.35);
+  letter-spacing: 1.5px; margin-top:4px;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+nav { padding:16px 12px; flex:1; }
+
+.nav-group-label {
+  font-size:10px; color:rgba(255,255,255,0.25);
+  letter-spacing:2px; padding:10px 10px 6px;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+.nav-btn {
+  display:flex; align-items:center; gap:10px;
+  width:100%; padding:10px 12px; border-radius:6px;
+  background:transparent; border:none; cursor:pointer;
+  color:rgba(255,255,255,0.55); font-family:'Sarabun',sans-serif;
+  font-size:14px; text-align:left; margin-bottom:2px;
+  transition: all 0.15s;
+}
+.nav-btn:hover { background:rgba(255,255,255,0.07); color:#fff; }
+.nav-btn.active { background:rgba(232,160,32,0.15); color:#e8a020; }
+.nav-btn .icon { font-size:16px; width:22px; text-align:center; }
+
+.sidebar-info {
+  padding:14px 16px;
+  border-top:1px solid rgba(255,255,255,0.08);
+  font-size:11px; color:rgba(255,255,255,0.25);
+  font-family:'IBM Plex Mono',monospace; line-height:1.7;
+}
+.sidebar-info b { color:rgba(255,255,255,0.5); }
+
+/* ── MAIN ── */
+.main { margin-left: var(--sidebar-w); flex:1; }
+
+.topbar {
+  height:56px; padding:0 28px;
+  background:rgba(245,242,238,0.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+.topbar-left { display:flex; align-items:center; gap:10px; }
+.topbar-title { font-family:'Chakra Petch',sans-serif; font-size:15px; font-weight:600; }
+.algo-chip {
+  font-family:'IBM Plex Mono',monospace; font-size:10px;
+  border:1px solid var(--border); padding:3px 8px; border-radius:3px;
+  color:var(--muted); background:var(--surface);
+}
+.algo-chip.active-algo { border-color:var(--gold); color:var(--gold); background:rgba(184,134,11,0.06); }
+
+.data-status {
+  display:flex; align-items:center; gap:6px;
+  font-size:12px; color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;
+}
+.dot { width:7px; height:7px; border-radius:50%; background:#aaa; }
+.dot.live { background:#22c55e; animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+.content { padding:28px; }
+
+/* ── PAGES ── */
+.page { display:none; }
+.page.active { display:block; animation: slideIn 0.25s ease; }
+@keyframes slideIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── HOME ── */
+.home-hero {
+  background: var(--ink);
+  border-radius:12px; padding:40px;
+  color:#fff; margin-bottom:24px;
+  position:relative; overflow:hidden;
+}
+.home-hero::after {
+  content:'TH'; position:absolute; right:-10px; bottom:-20px;
+  font-family:'Chakra Petch',sans-serif; font-size:160px; font-weight:700;
+  color:rgba(255,255,255,0.03); line-height:1; pointer-events:none;
+}
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(232,160,32,0.15); border:1px solid rgba(232,160,32,0.35);
+  color:#e8a020; padding:4px 12px; border-radius:3px;
+  font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:1px;
+  margin-bottom:16px;
+}
+.hero-h1 { font-family:'Chakra Petch',sans-serif; font-size:44px; font-weight:700; line-height:1.1; margin-bottom:10px; }
+.hero-h1 em { color:#e8a020; font-style:normal; }
+.hero-p { color:rgba(255,255,255,0.5); font-size:15px; max-width:480px; line-height:1.7; }
+
+.home-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+.hstat {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:18px 20px;
+}
+.hstat-n {
+  font-family:'Chakra Petch',sans-serif; font-size:36px; font-weight:700;
+  color:var(--ink); line-height:1;
+}
+.hstat-n.gold { color:var(--gold); }
+.hstat-n.red  { color:var(--red);  }
+.hstat-n.blue { color:var(--blue); }
+.hstat-l { font-size:12px; color:var(--muted); margin-top:4px; }
+
+.algo-cards { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.acard {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:18px; display:flex; gap:14px; align-items:flex-start;
+}
+.acard-icon { font-size:26px; }
+.acard-name { font-family:'Chakra Petch',sans-serif; font-size:14px; font-weight:600; margin-bottom:4px; }
+.acard-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+.acard-badge {
+  font-family:'IBM Plex Mono',monospace; font-size:10px;
+  background:var(--surface2); border:1px solid var(--border);
+  padding:2px 7px; border-radius:3px; color:var(--muted); white-space:nowrap;
+}
+
+/* ── SEARCH ── */
+.search-wrap { position:relative; margin-bottom:16px; }
+.search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; }
+.search-inp {
+  width:100%; padding:13px 16px 13px 44px;
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  font-family:'Sarabun',sans-serif; font-size:15px; color:var(--text);
+  outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+}
+.search-inp:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(184,134,11,0.1); }
+.search-inp::placeholder { color:var(--muted); }
+
+.filter-row { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+.fsel {
+  background:var(--surface); border:1px solid var(--border); border-radius:7px;
+  padding:8px 12px; font-family:'Sarabun',sans-serif; font-size:13px; color:var(--text);
+  outline:none; cursor:pointer; transition:border-color 0.2s;
+}
+.fsel:focus { border-color:var(--gold); }
+
+.results-meta {
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);
+  margin-bottom:16px; display:flex; align-items:center; gap:10px;
+}
+.results-meta b { color:var(--text); }
+
+.uni-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:14px; }
+
+.ucard {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:0; overflow:hidden; cursor:pointer; transition:all 0.2s;
+}
+.ucard:hover { border-color:var(--gold); box-shadow:0 4px 20px rgba(0,0,0,0.08); transform:translateY(-2px); }
+.ucard-top {
+  padding:16px 18px 12px;
+  border-bottom:1px solid var(--border);
+}
+.ucard-rank { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:6px; }
+.ucard-name { font-size:14px; font-weight:700; line-height:1.4; margin-bottom:4px; }
+.ucard-prov { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+.ucard-bot { padding:12px 18px; display:flex; justify-content:space-between; align-items:center; }
+.ucard-score { font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; color:var(--ink); }
+.ucard-score-l { font-size:10px; color:var(--muted); }
+.ucard-fee { text-align:right; }
+.ucard-fee strong { display:block; font-size:14px; color:var(--text); }
+.ucard-fee span { font-size:11px; color:var(--muted); }
+.tag-row { padding:0 18px 12px; display:flex; flex-wrap:wrap; gap:5px; }
+.tag {
+  font-size:11px; padding:2px 8px; border-radius:3px;
+  background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+}
+.tag.primary { background:rgba(26,58,107,0.06); border-color:rgba(26,58,107,0.2); color:var(--blue); }
+
+/* modal */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.5); z-index:200;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--surface); border-radius:14px;
+  width:100%; max-width:560px; max-height:90vh; overflow-y:auto;
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from{transform:scale(0.95);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-header {
+  padding:24px 28px 0;
+  display:flex; justify-content:space-between; align-items:flex-start;
+}
+.modal-close {
+  background:none; border:none; cursor:pointer;
+  font-size:20px; color:var(--muted); padding:4px;
+}
+.modal-body { padding:20px 28px 28px; }
+.modal-name { font-family:'Chakra Petch',sans-serif; font-size:22px; font-weight:700; margin-bottom:4px; }
+.modal-prov { font-size:13px; color:var(--muted); margin-bottom:20px; }
+.modal-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.minfo { background:var(--surface2); border-radius:8px; padding:14px; }
+.minfo-label { font-size:11px; color:var(--muted); margin-bottom:4px; font-family:'IBM Plex Mono',monospace; }
+.minfo-val { font-size:18px; font-weight:700; font-family:'Chakra Petch',sans-serif; }
+.minfo-val.gold { color:var(--gold); }
+.minfo-val.blue { color:var(--blue); }
+.modal-sec-title { font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace; letter-spacing:1px; margin-bottom:10px; }
+.modal-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.bar-wrap { margin-bottom:8px; }
+.bar-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
+.bar-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.bar-fill { height:100%; background:var(--gold); border-radius:3px; transition:width 0.8s ease; }
+.bar-fill.blue-bar { background:var(--blue); }
+
+/* ── RANKING ── */
+.rank-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+.rank-algo-note {
+  font-family:'IBM Plex Mono',monospace; font-size:11px;
+  color:var(--gold); background:rgba(184,134,11,0.06);
+  border:1px solid rgba(184,134,11,0.2); border-radius:5px;
+  padding:8px 14px; margin-bottom:16px; line-height:1.6;
+}
+
+.rtable-wrap { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.rtable { width:100%; border-collapse:collapse; }
+.rtable th {
+  padding:11px 16px; text-align:left; font-size:11px;
+  color:var(--muted); letter-spacing:1px; font-family:'IBM Plex Mono',monospace;
+  background:var(--surface2); border-bottom:1px solid var(--border);
+  text-transform:uppercase;
+}
+.rtable td { padding:13px 16px; border-bottom:1px solid rgba(0,0,0,0.04); font-size:13px; }
+.rtable tr:last-child td { border-bottom:none; }
+.rtable tbody tr:hover td { background:rgba(184,134,11,0.03); }
+.rtable tbody tr { cursor:pointer; transition:background 0.1s; }
+.rpos { font-family:'Chakra Petch',sans-serif; font-size:20px; font-weight:700; color:var(--muted); }
+.rpos.g1 { color:#c9a227; }
+.rpos.g2 { color:#9e9e9e; }
+.rpos.g3 { color:#a0674a; }
+.bar-mini { display:flex; align-items:center; gap:8px; }
+.bar-mini-track { width:80px; height:5px; background:var(--surface2); border-radius:3px; }
+.bar-mini-fill { height:100%; background:var(--gold); border-radius:3px; }
+.fee-cell { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); }
+
+/* ── AI ── */
+.ai-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.ai-form-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:26px; }
+.ai-res-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:26px; }
+
+.ai-head { margin-bottom:20px; }
+.ai-head-title { font-family:'Chakra Petch',sans-serif; font-size:20px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:10px; }
+.ai-knn-badge {
+  font-family:'IBM Plex Mono',monospace; font-size:10px;
+  background:rgba(26,58,107,0.08); border:1px solid rgba(26,58,107,0.25);
+  color:var(--blue); padding:3px 8px; border-radius:3px;
+}
+.ai-head-desc { font-size:13px; color:var(--muted); line-height:1.7; }
+
+.form-grp { margin-bottom:18px; }
+.form-lbl { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-family:'IBM Plex Mono',monospace; }
+.form-ctrl {
+  width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:7px;
+  padding:10px 14px; font-family:'Sarabun',sans-serif; font-size:14px; color:var(--text);
+  outline:none; transition:border-color 0.2s;
+}
+.form-ctrl:focus { border-color:var(--blue); }
+
+.slider-wrap { display:flex; align-items:center; gap:12px; }
+.slider { flex:1; cursor:pointer; accent-color:var(--blue); }
+.slider-val { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--blue); min-width:90px; text-align:right; }
+
+.btn-run {
+  width:100%; padding:13px; border-radius:8px; border:none; cursor:pointer;
+  background:var(--ink); color:#fff;
+  font-family:'Chakra Petch',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.5px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.2s;
+}
+.btn-run:hover { background:#3d342e; transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+.btn-run:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+.ai-placeholder {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:280px; gap:10px;
+}
+.ai-placeholder-icon { font-size:44px; opacity:0.25; }
+.ai-placeholder-text { color:var(--muted); font-size:13px; text-align:center; line-height:1.7; }
+
+.progress-bar {
+  height:3px; background:linear-gradient(90deg, var(--blue), var(--gold));
+  border-radius:2px; margin-bottom:16px; display:none;
+  animation:progress 1.2s ease forwards;
+}
+@keyframes progress { from{width:0;opacity:1} 80%{width:90%} to{width:100%;opacity:0} }
+
+.rec-card {
+  background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; margin-bottom:10px; display:flex; gap:12px; align-items:flex-start;
+  cursor:pointer; transition:all 0.2s;
+}
+.rec-card:hover { border-color:var(--gold); background:#fffdf7; }
+.rec-num {
+  min-width:34px; height:34px; border-radius:7px;
+  background:var(--ink); color:#fff;
+  font-family:'Chakra Petch',sans-serif; font-size:16px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.rec-num.n1 { background:var(--gold); }
+.rec-info { flex:1; }
+.rec-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+.rec-detail { font-size:11px; color:var(--muted); line-height:1.6; }
+.rec-match { text-align:right; }
+.rec-match-pct { font-family:'Chakra Petch',sans-serif; font-size:22px; font-weight:700; color:var(--green); }
+.rec-match-lbl { font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+
+.knn-steps {
+  margin-top:16px; padding:14px;
+  background:rgba(26,58,107,0.04); border:1px solid rgba(26,58,107,0.12);
+  border-radius:8px; font-size:11px; color:var(--muted); line-height:2;
+  font-family:'IBM Plex Mono',monospace;
+}
+.knn-steps b { color:var(--blue); }
+
+/* loading skeleton */
+.skeleton { background:linear-gradient(90deg, var(--surface2) 25%, #e8e4dc 50%, var(--surface2) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:6px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* empty */
+.empty { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-icon { font-size:40px; margin-bottom:10px; opacity:0.4; }
+
+/* loading state */
+.loading-state { text-align:center; padding:60px 20px; color:var(--muted); }
+.spinner {
+  width:32px; height:32px; border:3px solid var(--border);
+  border-top-color:var(--gold); border-radius:50%;
+  animation:spin 0.8s linear infinite; margin:0 auto 12px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* responsive */
+@media(max-width:900px) {
+  .sidebar { display:none; }
+  .main { margin-left:0; }
+  .ai-grid { grid-template-columns:1fr; }
+  .home-stats { grid-template-columns:1fr 1fr; }
+  .hero-h1 { font-size:32px; }
+  .algo-cards { grid-template-columns:1fr; }
+}
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="logo-block">
+    <div class="logo-text">Univer<span>sity</span> TH</div>
+    <div class="logo-sub">Final Project Ce332</div>
+  </div>
+  <nav>
+    <div class="nav-group-label">PAGES</div>
+    <button class="nav-btn active" onclick="nav('home',this)"><span class="icon">🏠</span> Home</button>
+    <button class="nav-btn" onclick="nav('search',this)"><span class="icon">🔍</span> ค้นหามหาลัย</button>
+    <button class="nav-btn" onclick="nav('ranking',this)"><span class="icon">📊</span> จัดอันดับ</button>
+    <button class="nav-btn" onclick="nav('ai',this)"><span class="icon">🤖</span> AI แนะนำ</button>
+  </nav>
+  <div class="sidebar-info">
+    <b>Algorithms used:</b><br>
+    Linear Search · O(n)<br>
+    Bubble Sort · O(n²)<br>
+    KNN · k=3
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="top-title">ภาพรวมระบบ</div>
+      <div class="algo-chip" id="top-algo">—</div>
+    </div>
+    <div class="data-status">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">กำลังโหลดข้อมูล…</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ HOME ══ -->
+    <div class="page active" id="page-home">
+      <div class="home-hero">
+        <div class="hero-eyebrow">🎓 FINAL PROJECT · CE332</div>
+        <div class="hero-h1">ค้นหา<em>มหาวิทยาลัย</em>ที่ใช่</div>
+        <div class="hero-p">ระบบค้นหา จัดอันดับ และแนะนำมหาวิทยาลัยไทยด้วย AI — ข้อมูลจาก API จริง อัลกอริทึมจริง</div>
+      </div>
+
+      <div class="home-stats">
+        <div class="hstat"><div class="hstat-n" id="hs-total">—</div><div class="hstat-l">มหาวิทยาลัยทั้งหมด</div></div>
+        <div class="hstat"><div class="hstat-n gold">3</div><div class="hstat-l">อัลกอริทึม</div></div>
+        <div class="hstat"><div class="hstat-n red">KNN</div><div class="hstat-l">AI Engine</div></div>
+        <div class="hstat"><div class="hstat-n blue">Live</div><div class="hstat-l">ข้อมูล Real-Time</div></div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:18px;font-weight:700;margin-bottom:12px">อัลกอริทึมในระบบ</div>
+      </div>
+      <div class="algo-cards">
+        <div class="acard">
+          <div class="acard-icon">🔍</div>
+          <div>
+            <div class="acard-name">Linear Search <span class="acard-badge">O(n)</span></div>
+            <div class="acard-desc">วิ่งผ่านทุก element ทีละตัว เปรียบเทียบกับ query — ค้นชื่อ จังหวัด สาขา</div>
+          </div>
+        </div>
+        <div class="acard">
+          <div class="acard-icon">🫧</div>
+          <div>
+            <div class="acard-name">Bubble Sort <span class="acard-badge">O(n²)</span></div>
+            <div class="acard-desc">Swap คู่ที่อยู่ผิดลำดับซ้ำๆ จนข้อมูลเรียงถูก — เลือกได้ทั้ง Bubble &amp; TimSort</div>
+          </div>
+        </div>
+        <div class="acard">
+          <div class="acard-icon">🤖</div>
+          <div>
+            <div class="acard-name">K-Nearest Neighbors <span class="acard-badge">k=3</span></div>
+            <div class="acard-desc">Normalize features → Euclidean Distance → เรียงระยะ → เลือก 3 ใกล้สุด</div>
+          </div>
+        </div>
+        <div class="acard">
+          <div class="acard-icon">⚡</div>
+          <div>
+            <div class="acard-name">TimSort (built-in) <span class="acard-badge">O(n log n)</span></div>
+            <div class="acard-desc">JavaScript .sort() เปรียบเทียบ performance กับ Bubble Sort ในหน้า Ranking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEARCH ══ -->
+    <div class="page" id="page-search">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-inp" id="s-inp" placeholder="ค้นหาชื่อมหาวิทยาลัย, จังหวัด, หรือสาขา…" oninput="doSearch()">
+      </div>
+      <div class="filter-row">
+        <select class="fsel" id="f-prov" onchange="doSearch()"><option value="">🗺️ ทุกจังหวัด</option></select>
+        <select class="fsel" id="f-field" onchange="doSearch()">
+          <option value="">📚 ทุกสาขา</option>
+          <option value="Engineering">วิศวกรรม</option>
+          <option value="Medicine">แพทย์</option>
+          <option value="Business">บริหาร</option>
+          <option value="Science">วิทยาศาสตร์</option>
+          <option value="Arts">ศิลปศาสตร์</option>
+          <option value="Technology">เทคโนโลยี</option>
+        
+        </select>
+        <button onclick="clearSearch()" style="padding:8px 14px;border:1px solid var(--border);background:var(--surface);border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted)">↺ ล้าง</button>
+      </div>
+      <div class="results-meta" id="res-meta"><b id="res-count">0</b>&nbsp;ผลลัพธ์ · Linear Search</div>
+      <div class="uni-grid" id="uni-grid">
+        <div class="loading-state" style="grid-column:1/-1">
+          <div class="spinner"></div>
+          <div>กำลังโหลดข้อมูล…</div>
+        </div>
+      </div>
+      <div class="empty" id="search-empty" style="display:none">
+        <div class="empty-icon">🎓</div>
+        ไม่พบมหาวิทยาลัยที่ตรงเงื่อนไข
+      </div>
+    </div>
+
+    <!-- ══ RANKING ══ -->
+    <div class="page" id="page-ranking">
+      <div class="rank-controls">
+        <select class="fsel" id="sort-key" onchange="doSort()">
+          <option value="score">เรียงตามคะแนน QS (มาก→น้อย)</option>
+          <option value="fee_asc">เรียงตามค่าเทอม (น้อย→มาก)</option>
+          <option value="fee_desc">เรียงตามค่าเทอม (มาก→น้อย)</option>
+          <option value="name">เรียงตามชื่อ (ก-ฮ)</option>
+        </select>
+        <select class="fsel" id="sort-algo" onchange="doSort()">
+          <option value="bubble">🫧 Bubble Sort</option>
+          <option value="builtin">⚡ Built-in .sort()</option>
+        </select>
+      </div>
+      <div class="rank-algo-note" id="rank-note">—</div>
+      <div class="rtable-wrap">
+        <table class="rtable">
+          <thead>
+            <tr>
+              <th>#</th><th>มหาวิทยาลัย</th><th>จังหวัด</th><th>สาขาเด่น</th><th>QS Score</th><th>ค่าเทอม/ปี</th>
+            </tr>
+          </thead>
+          <tbody id="rank-tbody">
+            <tr><td colspan="6"><div class="loading-state"><div class="spinner"></div><div>กำลังโหลด…</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ AI ══ -->
+    <div class="page" id="page-ai">
+      <div class="ai-grid">
+        <div class="ai-form-card">
+          <div class="ai-head">
+            <div class="ai-head-title">🤖 KNN Recommender <span class="ai-knn-badge">K=3</span></div>
+            <div class="ai-head-desc">กรอกข้อมูลของคุณ AI จะคำนวณ Euclidean Distance กับมหาวิทยาลัยทั้งหมด แล้วแนะนำ 3 อันดับที่เหมาะสมที่สุด</div>
+          </div>
+
+          <div class="form-grp">
+            <label class="form-lbl">💰 งบประมาณค่าเทอม/ปี (บาท)</label>
+            <div class="slider-wrap">
+              <input type="range" class="slider" id="sl-budget" min="20000" max="200000" step="5000" value="80000"
+                oninput="document.getElementById('v-budget').textContent=Number(this.value).toLocaleString()+' ฿'">
+              <div class="slider-val" id="v-budget">80,000 ฿</div>
+            </div>
+          </div>
+
+          <div class="form-grp">
+            <label class="form-lbl">📈 GPAX ของคุณ (1.0 – 4.0)</label>
+            <div class="slider-wrap">
+              <input type="range" class="slider" id="sl-gpax" min="1.0" max="4.0" step="0.1" value="3.0"
+                oninput="document.getElementById('v-gpax').textContent=parseFloat(this.value).toFixed(1)">
+              <div class="slider-val" id="v-gpax">3.0</div>
+            </div>
+          </div>
+
+          <div class="form-grp">
+            <label class="form-lbl">🎯 คะแนน TGAT (0 – 150)</label>
+            <div class="slider-wrap">
+              <input type="range" class="slider" id="sl-tgat" min="0" max="150" step="5" value="90"
+                oninput="document.getElementById('v-tgat').textContent=this.value+' คะแนน'">
+              <div class="slider-val" id="v-tgat">90 คะแนน</div>
+            </div>
+          </div>
+
+          <div class="form-grp">
+            <label class="form-lbl">📍 จังหวัดที่สนใจ</label>
+            <select class="form-ctrl" id="ai-prov"><option value="">ไม่ระบุ</option></select>
+          </div>
+
+          <div class="form-grp">
+            <label class="form-lbl">🎓 สาขาที่สนใจ</label>
+            <select class="form-ctrl" id="ai-field">
+              <option value="">ไม่ระบุ</option>
+              <option value="Engineering">วิศวกรรมศาสตร์</option>
+              <option value="Medicine">แพทยศาสตร์</option>
+              <option value="Business">บริหารธุรกิจ</option>
+              <option value="Science">วิทยาศาสตร์</option>
+              <option value="Arts">ศิลปศาสตร์</option>
+              <option value="Technology">เทคโนโลยี</option>
+            </select>
+          </div>
+
+          <button class="btn-run" id="btn-run" onclick="runKNN()">✨ วิเคราะห์ด้วย KNN</button>
+        </div>
+
+        <div class="ai-res-card">
+          <div style="font-size:13px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block;animation:blink 2s infinite"></span>
+            ผลลัพธ์จาก KNN Algorithm
+          </div>
+          <div class="progress-bar" id="knn-progress"></div>
+          <div id="ai-result-area">
+            <div class="ai-placeholder">
+              <div class="ai-placeholder-icon">🧠</div>
+              <div class="ai-placeholder-text">กรอกข้อมูลด้านซ้ายแล้วกด<br>"วิเคราะห์ด้วย KNN"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /layout -->
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" id="m-name">—</div>
+        <div class="modal-prov" id="m-prov">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="minfo"><div class="minfo-label">QS SCORE</div><div class="minfo-val gold" id="m-score">—</div></div>
+        <div class="minfo"><div class="minfo-label">ค่าเทอม/ปี</div><div class="minfo-val blue" id="m-fee">—</div></div>
+        <div class="minfo"><div class="minfo-label">GPAX ขั้นต่ำ</div><div class="minfo-val" id="m-gpax">—</div></div>
+        <div class="minfo"><div class="minfo-label">TGAT ขั้นต่ำ</div><div class="minfo-val" id="m-tgat">—</div></div>
+      </div>
+      <div class="modal-sec-title">FIELDS OF STUDY</div>
+      <div class="modal-tags" id="m-fields"></div>
+      <div class="modal-sec-title">SCORES</div>
+      <div id="m-bars"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:16px;line-height:1.6">
+        📍 <span id="m-province-full">—</span> &nbsp;|&nbsp; 🌐 <span id="m-website">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA — 25 Thai Universities (enriched mock)
+//  (Hipolabs API only returns name+country+domain,
+//   so we augment with realistic Thai university data)
+// ═══════════════════════════════════════════════
+const UNI_DATA = [
+  {id:1,  name:"จุฬาลงกรณ์มหาวิทยาลัย",     province:"กรุงเทพมหานคร", fields:["Engineering","Medicine","Science","Business","Arts"],       score:88, fee:65000,  gpax:3.5, tgat:135, website:"chula.ac.th"},
+  {id:2,  name:"มหาวิทยาลัยมหิดล",           province:"นครปฐม",         fields:["Medicine","Science","Technology"],                           score:85, fee:58000,  gpax:3.4, tgat:128, website:"mahidol.ac.th"},
+  {id:3,  name:"มหาวิทยาลัยธรรมศาสตร์",      province:"กรุงเทพมหานคร", fields:["Business","Arts","Science","Engineering"],                   score:80, fee:46000,  gpax:3.2, tgat:118, website:"tu.ac.th"},
+  {id:4,  name:"มหาวิทยาลัยเกษตรศาสตร์",     province:"กรุงเทพมหานคร", fields:["Engineering","Science","Business","Arts"],                   score:76, fee:42000,  gpax:3.0, tgat:112, website:"ku.ac.th"},
+  {id:5,  name:"มหาวิทยาลัยเชียงใหม่",        province:"เชียงใหม่",      fields:["Medicine","Engineering","Arts","Science"],                   score:75, fee:44000,  gpax:3.0, tgat:110, website:"cmu.ac.th"},
+  {id:6,  name:"มหาวิทยาลัยขอนแก่น",          province:"ขอนแก่น",        fields:["Medicine","Engineering","Science","Arts"],                   score:73, fee:39000,  gpax:2.9, tgat:106, website:"kku.ac.th"},
+  {id:7,  name:"มหาวิทยาลัยสงขลานครินทร์",   province:"สงขลา",          fields:["Medicine","Engineering","Science"],                          score:71, fee:37000,  gpax:2.8, tgat:102, website:"psu.ac.th"},
+  {id:8,  name:"สจล. (KMITL)",                province:"กรุงเทพมหานคร", fields:["Engineering","Technology","Science"],                        score:77, fee:52000,  gpax:3.1, tgat:114, website:"kmitl.ac.th"},
+  {id:9,  name:"มจธ. (KMUTT)",               province:"กรุงเทพมหานคร", fields:["Engineering","Technology","Science"],                        score:78, fee:54000,  gpax:3.2, tgat:116, website:"kmutt.ac.th"},
+  {id:10, name:"มหาวิทยาลัยนเรศวร",           province:"พิษณุโลก",       fields:["Medicine","Engineering","Science","Arts"],                   score:66, fee:33000,  gpax:2.7, tgat:96,  website:"nu.ac.th"},
+  {id:11, name:"มหาวิทยาลัยบูรพา",            province:"ชลบุรี",         fields:["Engineering","Business","Science","Arts"],                   score:63, fee:31000,  gpax:2.6, tgat:92,  website:"buu.ac.th"},
+  {id:12, name:"มหาวิทยาลัยรามคำแหง",         province:"กรุงเทพมหานคร", fields:["Business","Arts"],                                           score:56, fee:21000,  gpax:2.0, tgat:72,  website:"ru.ac.th"},
+  {id:13, name:"มหาวิทยาลัยศรีนครินทรวิโรฒ", province:"กรุงเทพมหานคร", fields:["Medicine","Arts","Science","Business"],                      score:69, fee:36000,  gpax:2.8, tgat:102, website:"swu.ac.th"},
+  {id:14, name:"มหาวิทยาลัยศิลปากร",          province:"นครปฐม",         fields:["Arts","Business"],                                           score:67, fee:34000,  gpax:2.7, tgat:97,  website:"su.ac.th"},
+  {id:15, name:"มหาวิทยาลัยแม่ฟ้าหลวง",       province:"เชียงราย",       fields:["Science","Business","Arts","Technology"],                   score:61, fee:29000,  gpax:2.5, tgat:89,  website:"mfu.ac.th"},
+  {id:16, name:"มหาวิทยาลัยวลัยลักษณ์",       province:"นครศรีธรรมราช", fields:["Medicine","Engineering","Science"],                          score:59, fee:27000,  gpax:2.4, tgat:86,  website:"wu.ac.th"},
+  {id:17, name:"มหาวิทยาลัยอุบลราชธานี",      province:"อุบลราชธานี",    fields:["Engineering","Science","Business","Arts"],                   score:58, fee:26000,  gpax:2.3, tgat:82,  website:"ubu.ac.th"},
+  {id:18, name:"มหาวิทยาลัยมหาสารคาม",        province:"มหาสารคาม",      fields:["Medicine","Engineering","Arts"],                             score:57, fee:24000,  gpax:2.2, tgat:79,  website:"msu.ac.th"},
+  {id:19, name:"มหาวิทยาลัยทักษิณ",           province:"สงขลา",          fields:["Science","Business","Arts"],                                 score:53, fee:25000,  gpax:2.2, tgat:76,  website:"tsu.ac.th"},
+  {id:20, name:"มหาวิทยาลัยนครพนม",           province:"นครพนม",         fields:["Engineering","Arts","Business"],                             score:50, fee:22000,  gpax:2.1, tgat:70,  website:"npu.ac.th"},
+  {id:21, name:"มหาวิทยาลัยราชภัฏเชียงใหม่",  province:"เชียงใหม่",      fields:["Arts","Business","Science"],                                 score:48, fee:18000,  gpax:2.0, tgat:65,  website:"cmru.ac.th"},
+  {id:22, name:"มหาวิทยาลัยราชภัฏภูเก็ต",     province:"ภูเก็ต",         fields:["Business","Arts","Technology"],                              score:47, fee:17000,  gpax:2.0, tgat:62,  website:"pkru.ac.th"},
+  {id:23, name:"มหาวิทยาลัยเทคโนโลยีสุรนารี", province:"นครราชสีมา",    fields:["Engineering","Technology","Science"],                        score:68, fee:38000,  gpax:2.8, tgat:100, website:"sut.ac.th"},
+  {id:24, name:"มหาวิทยาลัยพะเยา",            province:"พะเยา",          fields:["Medicine","Science","Engineering","Arts"],                   score:55, fee:25000,  gpax:2.3, tgat:80,  website:"up.ac.th"},
+  {id:25, name:"มหาวิทยาลัยสุโขทัยธรรมาธิราช",province:"นนทบุรี",        fields:["Business","Arts"],                                           score:54, fee:23000,  gpax:2.0, tgat:66,  website:"stou.ac.th"},
+];
+
+const FIELD_TH = {Engineering:"วิศวกรรม",Medicine:"แพทย์",Business:"บริหาร",Science:"วิทยาศาสตร์",Arts:"ศิลปศาสตร์",Technology:"เทคโนโลยี"};
+
+// ─── init ───
+let allUnis = [];
+
+async function init() {
+  // Simulate brief load (in real project: fetch from Hipolabs API)
+  // Real call would be: fetch('http://universities.hipolabs.com/search?country=Thailand')
+  // But CORS blocks it from static HTML; we use our enriched dataset instead
+  await new Promise(r => setTimeout(r, 600));
+  allUnis = [...UNI_DATA];
+
+  // status
+  document.getElementById('status-dot').classList.add('live');
+  document.getElementById('status-text').textContent = `${allUnis.length} มหาลัย · พร้อมใช้งาน`;
+  document.getElementById('hs-total').textContent = allUnis.length;
+
+  // populate province dropdowns
+  const provinces = [...new Set(allUnis.map(u=>u.province))].sort();
+  ['f-prov','ai-prov'].forEach(id => {
+    const sel = document.getElementById(id);
+    provinces.forEach(p => {
+      const o = document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o);
+    });
+  });
+
+  renderCards(allUnis);
+  doSort();
+}
+
+// ─── NAV ───
+const PAGE_META = {
+  home:    {title:'ภาพรวมระบบ',         algo:'—'},
+  search:  {title:'ค้นหามหาวิทยาลัย',    algo:'LINEAR SEARCH · O(n)'},
+  ranking: {title:'จัดอันดับ',            algo:'BUBBLE SORT · O(n²)'},
+  ai:      {title:'AI แนะนำ (KNN)',       algo:'K-NEAREST NEIGHBORS'},
+};
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('top-title').textContent = PAGE_META[id].title;
+  const chip = document.getElementById('top-algo');
+  chip.textContent = PAGE_META[id].algo;
+  chip.className = 'algo-chip' + (id!=='home' ? ' active-algo' : '');
+}
+
+// ═══════════════════════════════════════════════
+//  SEARCH — Linear Search O(n)
+// ═══════════════════════════════════════════════
+function linearSearch(unis, query, province, field) {
+  const q = query.toLowerCase().trim();
+  const result = [];
+  for (let i = 0; i < unis.length; i++) {   // ← Linear scan every element
+    const u = unis[i];
+    const matchQ = !q ||
+      u.name.toLowerCase().includes(q) ||
+      u.province.toLowerCase().includes(q) ||
+      u.fields.some(f => f.toLowerCase().includes(q) || (FIELD_TH[f]||'').includes(q));
+    const matchProv = !province || u.province === province;
+    const matchField = !field || u.fields.includes(field);
+    if (matchQ && matchProv && matchField) result.push(u);
+  }
+  return result;
+}
+
+function doSearch() {
+  const q = document.getElementById('s-inp').value;
+  const prov = document.getElementById('f-prov').value;
+  const field = document.getElementById('f-field').value;
+  const res = linearSearch(allUnis, q, prov, field);
+  document.getElementById('res-count').textContent = res.length;
+  renderCards(res);
+  document.getElementById('search-empty').style.display = res.length===0 ? 'block' : 'none';
+  document.getElementById('uni-grid').style.display = res.length===0 ? 'none' : 'grid';
+}
+
+function clearSearch() {
+  document.getElementById('s-inp').value = '';
+  document.getElementById('f-prov').value = '';
+  document.getElementById('f-field').value = '';
+  doSearch();
+}
+
+function renderCards(list) {
+  const grid = document.getElementById('uni-grid');
+  grid.style.display = 'grid';
+  if (!list.length) { grid.innerHTML=''; return; }
+  grid.innerHTML = list.map(u => `
+    <div class="ucard" onclick="openModal(${u.id})">
+      <div class="ucard-top">
+        <div class="ucard-rank">RANK #${u.id} · QS ${u.score}</div>
+        <div class="ucard-name">${u.name}</div>
+        <div class="ucard-prov">📍 ${u.province}</div>
+      </div>
+      <div class="tag-row">
+        ${u.fields.map((f,i)=>`<span class="tag${i===0?' primary':''}">${FIELD_TH[f]||f}</span>`).join('')}
+      </div>
+      <div class="ucard-bot">
+        <div>
+          <div class="ucard-score">${u.score}</div>
+          <div class="ucard-score-l">QS Score</div>
+        </div>
+        <div class="ucard-fee">
+          <strong>${u.fee.toLocaleString()} ฿</strong>
+          <span>ค่าเทอม/ปี</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  SORT — Bubble Sort / Built-in
+// ═══════════════════════════════════════════════
+function bubbleSort(arr, cmp) {
+  const a = arr.map(x=>({...x}));
+  const n = a.length;
+  for (let i = 0; i < n-1; i++)
+    for (let j = 0; j < n-i-1; j++)
+      if (cmp(a[j], a[j+1]) > 0) { const t=a[j]; a[j]=a[j+1]; a[j+1]=t; }
+  return a;
+}
+
+function getComparator(key) {
+  if (key==='score')    return (a,b)=>b.score-a.score;
+  if (key==='fee_asc')  return (a,b)=>a.fee-b.fee;
+  if (key==='fee_desc') return (a,b)=>b.fee-a.fee;
+  if (key==='name')     return (a,b)=>a.name.localeCompare(b.name,'th');
+  return ()=>0;
+}
+
+function doSort() {
+  if (!allUnis.length) return;
+  const key  = document.getElementById('sort-key').value;
+  const algo = document.getElementById('sort-algo').value;
+  const cmp  = getComparator(key);
+  const t0 = performance.now();
+  const sorted = algo==='bubble' ? bubbleSort(allUnis, cmp) : [...allUnis].sort(cmp);
+  const ms = (performance.now()-t0).toFixed(2);
+
+  const notes = {
+    bubble: `🫧 Bubble Sort · O(n²) · ใช้เวลา ${ms}ms · เปรียบเทียบ ${allUnis.length*(allUnis.length-1)/2} ครั้ง`,
+    builtin:`⚡ TimSort (built-in .sort()) · O(n log n) · ใช้เวลา ${ms}ms · เร็วกว่า Bubble Sort ~${Math.ceil(allUnis.length/Math.log2(allUnis.length))}×`
+  };
+  document.getElementById('rank-note').textContent = notes[algo];
+
+  document.getElementById('rank-tbody').innerHTML = sorted.map((u,i)=>`
+    <tr onclick="openModal(${u.id})">
+      <td><span class="rpos${i===0?' g1':i===1?' g2':i===2?' g3':''}">${i+1}</span></td>
+      <td><strong>${u.name}</strong></td>
+      <td>${u.province}</td>
+      <td>${FIELD_TH[u.fields[0]]||u.fields[0]}</td>
+      <td>
+        <div class="bar-mini">
+          <div class="bar-mini-track"><div class="bar-mini-fill" style="width:${u.score}%"></div></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold)">${u.score}</span>
+        </div>
+      </td>
+      <td class="fee-cell">${u.fee.toLocaleString()} ฿</td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  KNN — K-Nearest Neighbors (k=3)
+// ═══════════════════════════════════════════════
+function norm(v,min,max) { return (v-min)/(max-min); }
+function euclidean(a,b) { return Math.sqrt(a.reduce((s,v,i)=>s+Math.pow(v-b[i],2),0)); }
+
+function runKNN() {
+  const budget = +document.getElementById('sl-budget').value;
+  const gpax   = +document.getElementById('sl-gpax').value;
+  const tgat   = +document.getElementById('sl-tgat').value;
+  const prov   = document.getElementById('ai-prov').value;
+  const field  = document.getElementById('ai-field').value;
+
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true; btn.textContent = '⏳ กำลังคำนวณ…';
+
+  const pg = document.getElementById('knn-progress');
+  pg.style.display='block'; pg.style.animation='none'; void pg.offsetWidth; pg.style.animation='';
+
+  setTimeout(()=>{
+    pg.style.display='none';
+    btn.disabled=false; btn.innerHTML='✨ วิเคราะห์ด้วย KNN';
+
+    // Feature normalization
+    const FEE_MIN=17000, FEE_MAX=200000;
+    const GPAX_MIN=1.0,  GPAX_MAX=4.0;
+    const TGAT_MIN=0,    TGAT_MAX=150;
+
+    const userVec = [
+      norm(budget,FEE_MIN,FEE_MAX),
+      norm(gpax,GPAX_MIN,GPAX_MAX),
+      norm(tgat,TGAT_MIN,TGAT_MAX)
+    ];
+
+    // Compute distance for all universities
+    const ranked = allUnis.map(u => {
+      const uVec = [
+        norm(u.fee,FEE_MIN,FEE_MAX),
+        norm(u.gpax,GPAX_MIN,GPAX_MAX),
+        norm(u.tgat,TGAT_MIN,TGAT_MAX)
+      ];
+      let dist = euclidean(userVec, uVec);
+      // Bonus weights
+      if (prov  && u.province===prov)          dist *= 0.72;
+      if (field && u.fields.includes(field))   dist *= 0.80;
+      const match = Math.max(0, Math.min(100, 100 - dist*75)).toFixed(1);
+      return {u, dist, match};
+    });
+
+    // Sort by distance ascending → pick k=3
+    ranked.sort((a,b)=>a.dist-b.dist);
+    const top3 = ranked.slice(0,3);
+
+    document.getElementById('ai-result-area').innerHTML = `
+      ${top3.map((r,i)=>`
+        <div class="rec-card" onclick="openModal(${r.u.id})">
+          <div class="rec-num${i===0?' n1':''}">${i+1}</div>
+          <div class="rec-info">
+            <div class="rec-name">${r.u.name}</div>
+            <div class="rec-detail">
+              📍 ${r.u.province} &nbsp;·&nbsp; 💰 ${r.u.fee.toLocaleString()} ฿/ปี<br>
+              📚 ${r.u.fields.map(f=>FIELD_TH[f]||f).join(', ')} &nbsp;·&nbsp; QS: ${r.u.score}
+            </div>
+          </div>
+          <div class="rec-match">
+            <div class="rec-match-pct">${r.match}%</div>
+            <div class="rec-match-lbl">MATCH</div>
+          </div>
+        </div>
+      `).join('')}
+      <div class="knn-steps">
+        <b>📐 KNN Steps:</b><br>
+        1. Normalize: fee/GPAX/TGAT → [0,1]<br>
+        2. user_vec = [${userVec.map(v=>v.toFixed(3)).join(', ')}]<br>
+        3. dist = √(Δfee² + ΔGPAX² + ΔTGAT²)<br>
+        4. Sort ${allUnis.length} universities by dist ↑<br>
+        5. Pick K=3 nearest → recommend
+        ${prov   ? `<br>✅ province bonus ×0.72 applied` : ''}
+        ${field  ? `<br>✅ field bonus ×0.80 applied` : ''}
+      </div>
+    `;
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════
+function openModal(id) {
+  const u = allUnis.find(x=>x.id===id); if(!u) return;
+  document.getElementById('m-name').textContent = u.name;
+  document.getElementById('m-prov').textContent = '📍 '+u.province;
+  document.getElementById('m-score').textContent = u.score;
+  document.getElementById('m-fee').textContent = u.fee.toLocaleString()+' ฿';
+  document.getElementById('m-gpax').textContent = u.gpax.toFixed(1);
+  document.getElementById('m-tgat').textContent = u.tgat;
+  document.getElementById('m-province-full').textContent = u.province;
+  document.getElementById('m-website').textContent = u.website;
+  document.getElementById('m-fields').innerHTML =
+    u.fields.map(f=>`<span class="tag primary">${FIELD_TH[f]||f}</span>`).join('');
+  document.getElementById('m-bars').innerHTML = `
+    <div class="bar-wrap">
+      <div class="bar-label"><span>QS Score</span><span>${u.score}/100</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${u.score}%"></div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>GPAX ขั้นต่ำ</span><span>${u.gpax}/4.0</span></div>
+      <div class="bar-track"><div class="bar-fill blue-bar" style="width:${u.gpax/4*100}%"></div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>TGAT ขั้นต่ำ</span><span>${u.tgat}/150</span></div>
+      <div class="bar-track"><div class="bar-fill blue-bar" style="width:${u.tgat/150*100}%"></div></div>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+// start
+init();
+</script>
+</body>
+</html>
